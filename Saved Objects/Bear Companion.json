@@ -1,0 +1,148 @@
+{
+  "SaveName": "",
+  "GameMode": "",
+  "Date": "",
+  "VersionNumber": "",
+  "GameType": "",
+  "GameComplexity": "",
+  "Tags": [],
+  "Gravity": 0.5,
+  "PlayArea": 0.5,
+  "Table": "",
+  "Sky": "",
+  "Note": "",
+  "Rules": "",
+  "TabStates": {},
+  "LuaScript": "",
+  "LuaScriptState": "",
+  "XmlUI": "",
+  "ObjectStates": [
+    {
+      "GUID": "43c8fc",
+      "Name": "Custom_Model",
+      "Transform": {
+        "posX": -9.686913,
+        "posY": 1.69127822,
+        "posZ": -34.78752,
+        "rotX": -3.49812041E-07,
+        "rotY": 1.38798362E-06,
+        "rotZ": -3.97220617E-07,
+        "scaleX": 1.07499993,
+        "scaleY": 1.07499993,
+        "scaleZ": 1.07499993
+      },
+      "Nickname": "Bear Companion",
+      "Description": "24/24",
+      "GMNotes": "",
+      "ColorDiffuse": {
+        "r": 0.6784314,
+        "g": 0.450980365,
+        "b": 0.360783964
+      },
+      "LayoutGroupSortIndex": 0,
+      "Locked": false,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "MeasureMovement": false,
+      "DragSelectable": true,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": true,
+      "CustomMesh": {
+        "MeshURL": "http://cloud-3.steamusercontent.com/ugc/1770448249825857869/A99E5276CBF1D528E99DBE038F515B53D0FEAF3C/",
+        "DiffuseURL": "http://cloud-3.steamusercontent.com/ugc/1770448249825859093/83ED8C9E9B1C296EB3D0E272F7439907BCBFBA00/",
+        "NormalURL": "",
+        "ColliderURL": "http://cloud-3.steamusercontent.com/ugc/957460683451971014/E805BE4ED40B6961B2B944B3E72A48BF4E9BCC17/",
+        "Convex": true,
+        "MaterialIndex": 1,
+        "TypeIndex": 1,
+        "CastShadows": true
+      },
+      "LuaScript": "statNames = {Wound = false, Muddle = false, Immobilize = false, Invisible = false, Disarm = false, Strengthen = false, Stun = false, Poison = false, Regenerate = false}\r\n\r\nhealth = {\r\n  value = 10,\r\n  max = 10\r\n}\r\n\r\nstatsObj = \"6c1b20\"\r\n\r\nfunction onLoad(save_state)\r\n  if save_state ~= \"\" and self.getDescription() ~= \"\" then\r\n    saved_data = JSON.decode(save_state)\r\n    if saved_data.statNames then statNames = saved_data.statNames end\r\n    if saved_data.health then\r\n      health = saved_data.health\r\n      Wait.condition(setHealth, checkLoaded)\r\n    end\r\n  end\r\n  Wait.condition(checkStats, checkLoaded)\r\n  createBtns()\r\nend\r\n\r\nfunction checkLoaded()\r\n  if not self.loading_custom and not self.spawning then\r\n    return true\r\n  end\r\n  return false\r\nend\r\n\r\nfunction checkStats()\r\n  for i,j in pairs(statNames) do\r\n    if j == true then\r\n      self.UI.setAttribute(i, \"active\", true)\r\n    end\r\n  end\r\n  Wait.frames(function() self.UI.setAttribute(\"statePanel\", \"width\", 300 + (getStatsCount()-1)*350) end, 1)\r\n  local num = self.getName():match(\"%d+\")\r\n  if num ~= nil then\r\n    self.UI.setAttribute(\"number\", \"image\", num)\r\n  end\r\nend\r\n\r\nfunction onSave()\r\n  local save_state = JSON.encode({health = health, statNames = statNames})\r\n  -- local save_state = \"\"\r\n  self.script_state = save_state\r\nend\r\n\r\nfunction createBtns()\r\n  local buttonParameter = {click_function = \"add\", function_owner = self, position = {-0.2, 0.04, -0.3}, label = \"+\", width = 250, height = 250, font_size = 300, color = {0,0,0,0}, font_color = {0,0,0,100}}\r\n  self.createButton(buttonParameter)\r\n  buttonParameter.position = {0.2, 0.04, -0.3}\r\n  buttonParameter.click_function = \"sub\"\r\n  buttonParameter.label = \"-\"\r\n  self.createButton(buttonParameter)\r\nend\r\n\r\nfunction add(obj, color, alt_click) onClick(color, -1, \"add\") end\r\nfunction sub(obj, color, alt_click) onClick(color, -1, \"sub\") end\r\nfunction onClick(player, value, id)\r\n   if id == \"editButton\" then\r\n      if self.UI.getAttribute(\"editPanel\", \"active\") == \"False\" or self.UI.getAttribute(\"editPanel\", \"active\") == nil then\r\n         self.UI.setAttribute(\"editPanel\", \"active\", true)\r\n      else\r\n         self.UI.setAttribute(\"editPanel\", \"active\", false)\r\n      end\r\n   elseif statNames[id] ~= nil then\r\n      self.UI.setAttribute(id, \"active\", false)\r\n      self.UI.setAttribute(\"statePanel\", \"width\", 260 + (getStatsCount() - 1) * 280)\r\n      statNames[id] = false\r\n   elseif id == \"normal\" or id == \"elite\" then\r\n      setTyp({id})\r\n   elseif id == \"addNumber\" or id == \"subNumber\" then\r\n      local temp = -1\r\n      if id == \"addNumber\" then temp = 1 end\r\n      local number = tonumber(self.UI.getAttribute(\"number\", \"image\")) + temp\r\n      if number > 10 then number = 10 end\r\n      if number < 1 then number = 1 end\r\n      self.UI.setAttribute(\"number\", \"image\", number)\r\n   else\r\n      local oldHP = health.value\r\n      local tabInfo = getNotebookTabs()\r\n      local tab = \"\"\r\n      if id == \"add\" then health.value = health.value + 1\r\n      elseif id == \"sub\" then health.value = health.value - 1\r\n      elseif id == \"addMax\" then health.value = health.value + 1\r\n         health.max = health.max + 1\r\n      elseif id == \"subMax\" then health.value = health.value - 1\r\n         health.max = health.max - 1\r\n      end\r\n      if health.value > health.max then health.value = health.max end\r\n      if health.value < 0 then health.value = 0 end\r\n\r\n      for _, t in pairs(tabInfo) do\r\n         if t.title == \"Options\" then tab = t.body end\r\n      end\r\n      if tab ~= \"\" then\r\n         local settings = tab:match(\"broadcast hp changes:(%a+)\")\r\n         --all/chars/monster/none\r\n         if settings == \"all\" or settings == \"chars\" then\r\n            local color = \"Green\"\r\n            if player ~= nil and player ~= -1 and player.color == nil and Player[player] then\r\n               color = player\r\n            end\r\n            if id == \"add\" then\r\n               if oldHP == health.value then\r\n                  broadcastToAll(self.getName() .. \" is already at max HP.\", color)\r\n               else\r\n                  broadcastToAll(self.getName() .. \" gained 1 HP. From \" .. oldHP .. \"HP to \" .. health.value .. \"HP.\", color)\r\n               end\r\n            elseif id == \"sub\" then\r\n               if oldHP == health.value then\r\n                  broadcastToAll(self.getName() .. \" is already at 0 HP.\", color)\r\n               else\r\n                  broadcastToAll(self.getName() .. \" lost 1 HP. From \" .. oldHP .. \"HP to \" .. health.value .. \"HP.\", color)\r\n               end\r\n            end\r\n         end\r\n      end\r\n      getObjectFromGUID(\"75ab50\").call(\"changeHP\", {self.getName(), health.value})\r\n      setHealth()\r\n   end\r\n   self.UI.setAttribute(\"editButton\", \"textColor\", \"#000000\")\r\nend\r\n\r\nfunction onCollisionEnter(a)\r\n  if a.collision_object.getQuantity() ~= -1 then return end\r\n local newState = a.collision_object.getName()\r\n  if statNames[newState] ~= nil then\r\n    statNames[newState] = true\r\n    a.collision_object.destruct()\r\n    self.UI.setAttribute(newState, \"active\", true)\r\n    Wait.frames(function() self.UI.setAttribute(\"statePanel\", \"width\", 260 + (getStatsCount()-1)*265) end, 1)\r\n  end\r\nend\r\n\r\nfunction getStatsCount()\r\n  local count = 0\r\n  for i,j in pairs(statNames) do\r\n    if self.UI.getAttribute(i, \"active\") == \"True\" then\r\n      count = count + 1\r\n    end\r\n  end\r\n  return count\r\nend\r\n\r\nfunction setHealth()\r\n  self.UI.setAttribute(\"progressBar\", \"percentage\", health.value / health.max * 100)\r\n  self.UI.setAttribute(\"editButton\", \"text\", health.value .. \"/\" .. health.max)\r\n  self.setDescription(health.value .. \"/\" .. health.max)\r\n  self.UI.setAttribute(\"editButton\", \"textColor\", \"#000000\")\r\nend",
+      "LuaScriptState": "{\"health\":{\"max\":24,\"value\":24},\"statNames\":{\"Disarm\":false,\"Immobilize\":false,\"Invisible\":false,\"Muddle\":false,\"Poison\":false,\"Regenerate\":false,\"Strengthen\":false,\"Stun\":false,\"Wound\":false}}",
+      "XmlUI": "<Defaults>\r\n  <Button onClick=\"onClick\" fontSize=\"80\" fontStyle=\"Bold\" textColor=\"#FFFFFF\" color=\"#00000000\"/>\r\n  <Text fontSize=\"80\" fontStyle=\"Bold\" color=\"#FFFFFF\"/>\r\n</Defaults>\r\n\r\n<Panel id=\"panel\" position=\"0 0 -260\" rotation=\"270 0 0\" scale=\"0.2 0.2\">\r\n  <ProgressBar id=\"progressBar\" height=\"100\" width=\"600\" showPercentageText=\"false\" color=\"#FFFFFFE0\" percentage=\"100\" fillImageColor=\"#AD755E\"></ProgressBar>\r\n  <Button id=\"editButton\" textColor=\"#000000\" height=\"100\" width=\"600\" text=\"10/10\"></Button>\r\n  <Panel id=\"editPanel\" height=\"100\" width=\"600\" offsetXY=\"0 200\" active=\"false\">\r\n    <VerticalLayout>\r\n      <HorizontalLayout spacing=\"73\"  minheight=\"100\">\r\n        <Button id=\"subMax\" text=\"◄\"></Button>\r\n        <Text>Max</Text>\r\n        <Button id=\"addMax\" text=\"►\"></Button>\r\n      </HorizontalLayout>\r\n    </VerticalLayout>\r\n  </Panel>\r\n  <Panel id=\"statePanel\" height=\"260\" width=\"-5\" offsetXY=\"0 210\">\r\n    <VerticalLayout>\r\n      <HorizontalLayout spacing=\"5\">\r\n        <Button id=\"Disarm\" active=\"false\"><Image image=\"Disarm\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Immobilize\" active=\"false\"><Image image=\"Immobilize\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Invisible\" active=\"false\"><Image image=\"Invisible\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Muddle\" active=\"false\"><Image image=\"Muddle\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Poison\" active=\"false\"><Image image=\"Poison\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Strengthen\" active=\"false\"><Image image=\"Strengthen\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Stun\" active=\"false\"><Image image=\"Stun\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Wound\" active=\"false\"><Image image=\"Wound\" preserveAspect=\"true\"></Image></Button>\r\n        <Button id=\"Regenerate\" active=\"false\"><Image image=\"Regenerate\" preserveAspect=\"true\"></Image></Button>\r\n      </HorizontalLayout>\r\n    </VerticalLayout>\r\n  </Panel>\r\n</Panel>",
+      "CustomUIAssets": [
+        {
+          "Name": "Disarm",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671672270/3DD70341FE7C762F57930DCB123FC3B3F669E70D/"
+        },
+        {
+          "Name": "Invisible",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671674221/401A435DA860B2CA7E87D570905F58622C69229E/"
+        },
+        {
+          "Name": "Immobilize",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671673391/877AC6C5C993070B4ACE2F0BA540FD277C9FC174/"
+        },
+        {
+          "Name": "Wound",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671672778/8AD44E86BD73836627A25E71B6B3DA081A0E64D6/"
+        },
+        {
+          "Name": "Stun",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671678940/616CC0951CB17024448D3CBC7E5CA9D3A05D7555/"
+        },
+        {
+          "Name": "Poison",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671677797/DEAEC4FAB2B54FEA069B0C8995DB7E97160767F3/"
+        },
+        {
+          "Name": "Strengthen",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671675865/B73B248633B5C6A8AC44EC7BBBDE56D6632FD208/"
+        },
+        {
+          "Name": "Muddle",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/83721958671681965/01EAE5A55C229B9F1067AF64A398667F3F25E841/"
+        },
+        {
+          "Name": "1",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225889607/DFA4EF43DC2D1A8B6F1C7F22E7C31718E35CCB31/"
+        },
+        {
+          "Name": "2",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225890374/9B9B38BE2BB6A23EC21C977911FEC8915C74FF19/"
+        },
+        {
+          "Name": "3",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225891903/93FF8C7F051FDD06DAEBD17F2BBD917960CB1779/"
+        },
+        {
+          "Name": "4",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225892191/F2D0FC8179C04D3E4BFD2A546FAD7BC76D813091/"
+        },
+        {
+          "Name": "5",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225892469/3DC5E471FC5F2CB1D6DBFC91DF5ADB2751A52E12/"
+        },
+        {
+          "Name": "6",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225892918/3720A0E91CA48BB3972BBE924B26A34FFA34F57F/"
+        },
+        {
+          "Name": "7",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225893323/DBBE037A62CFA34AD9E05F34A035BDE7A22995EB/"
+        },
+        {
+          "Name": "8",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225893738/3DAE234411D631E7076F3639F4389ECE2019FB73/"
+        },
+        {
+          "Name": "9",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225894076/3DF6535BBE81D65752CBCF9EBC0119A6A41696FC/"
+        },
+        {
+          "Name": "10",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/929311677225894415/18B81F2763921B7C9F11090AB9E00CABE4DDF344/"
+        },
+        {
+          "Name": "Tracker",
+          "URL": "http://cloud-3.steamusercontent.com/ugc/2439138553939035626/893D92412263CE1A9C4E257D03A298E4586F6F6B/"
+        }
+      ]
+    }
+  ]
+}
